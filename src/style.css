@@ -465,6 +465,35 @@ tr:hover .ver-chip { background: rgba(63, 185, 80, .18) }
 
 /* ── Utilities ── */
 .hide { display: none }
+
+/* ── Test Bundle ── */
+.test-panel { max-width: 700px }
+.test-panel h3 { font-size: 16px; margin-bottom: 4px }
+.test-desc { font-size: 13px; color: var(--dim); margin-bottom: 12px }
+.test-input { display: flex; gap: 8px; margin-bottom: 16px }
+.test-input input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--bdr);
+  color: var(--txt);
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.test-input input:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc-glow) }
+.test-input button {
+  background: var(--acc);
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.test-input button:hover { opacity: .85 }
+.test-stats { font-size: 13px; color: var(--dim); margin-bottom: 10px }
 .loader {
   text-align: center;
   padding: 60px;

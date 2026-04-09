@@ -1,5 +1,5 @@
 import { discoverBundles, loadAll, filter, allData, bundleNames, friendlyName } from './data.js';
-import { renderStats, renderApps, renderBundles, renderPatches, showAppModal } from './render.js';
+import { renderStats, renderApps, renderBundles, renderPatches, renderTest, loadTestBundle, showAppModal } from './render.js';
 
 let view = 'apps';
 const $ = id => document.getElementById(id);
@@ -10,6 +10,7 @@ function render() {
   const el = $('content');
   if (view === 'apps') renderApps(data, el);
   else if (view === 'bundles') renderBundles(data, el);
+  else if (view === 'test') renderTest(el);
   else renderPatches(data, el);
 }
 
@@ -44,15 +45,18 @@ document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', (
   render();
 }));
 
-// Delegate: app card click -> modal, bundle toggle, changelog
+// Delegate: app card click -> modal, bundle toggle, test bundle
 $('content').addEventListener('click', e => {
   const card = e.target.closest('.card[data-pkg]');
   if (card) { showAppModal(card.dataset.pkg, allData); return; }
   const toggle = e.target.closest('[data-toggle]');
   if (toggle) {
-    // Toggle all siblings after the header
     let el = toggle.nextElementSibling;
     while (el) { el.classList.toggle('hide'); el = el.nextElementSibling; }
+  }
+  if (e.target.id === 'testBtn') {
+    const url = document.getElementById('testUrl')?.value?.trim();
+    if (url) loadTestBundle(url, document.getElementById('testResult'));
   }
 });
 

@@ -110,6 +110,48 @@ function patchTable(ps) {
   return h + '</tbody></table>';
 }
 
+export function renderTest(el) {
+  el.innerHTML = `<div class="test-panel">
+    <h3>Test a Bundle</h3>
+    <p class="test-desc">Paste a raw GitHub URL to a patches list JSON to preview it. Your bundle is not listed? <a href="https://github.com/Paresh-Maheshwari/patch-explorer/issues/new?template=submit-bundle.yml" target="_blank">Submit it here</a>.</p>
+    <div class="test-input">
+      <input type="text" id="testUrl" placeholder="https://raw.githubusercontent.com/.../patches-list.json">
+      <button id="testBtn">Load</button>
+    </div>
+    <div id="testResult"></div>
+  </div>`;
+}
+
+export async function loadTestBundle(url, el) {
+  el.innerHTML = '<div class="loader"><span class="spin"></span> Fetching...</div>';
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    const patches = j.patches || [];
+    if (!patches.length) { el.innerHTML = '<div class="loader">No patches found in this JSON.</div>'; return; }
+    const rows = patches.flatMap(p => {
+      const pkgs = p.compatiblePackages || {};
+      return Object.entries(pkgs).map(([pkg, vers]) => ({
+        name: p.name, desc: p.description || '', pkg,
+        vers: Array.isArray(vers) ? vers.map(String) : null,
+        use: p.use !== false, options: p.options || []
+      }));
+    });
+    const apps = new Set(rows.map(r => r.pkg));
+    let h = `<div class="test-stats">Version: <strong>${esc(j.version || 'unknown')}</strong> · ${patches.length} patches · ${apps.size} apps</div>`;
+    h += '<table><thead><tr><th>Patch</th><th>App</th><th>Package</th><th>Versions</th><th>Desc</th></tr></thead><tbody>';
+    for (const p of rows) {
+      h += `<tr><td>${esc(p.name)}</td><td>${friendlyName(p.pkg)}</td>
+        <td class="c-pkg">${p.pkg}</td><td class="c-ver">${fmtVer(p.vers)}</td>
+        <td class="c-desc">${esc(p.desc)}</td></tr>`;
+    }
+    el.innerHTML = h + '</tbody></table>';
+  } catch (e) {
+    el.innerHTML = `<div class="loader" style="color:var(--red)">Failed to load: ${esc(e.message)}<br><small>Make sure it's a raw GitHub URL to a patches-list.json file</small></div>`;
+  }
+}
+
 export function showAppModal(pkg, allData) {
   const patches = allData.filter(d => d.pkg === pkg);
   const byB = {};
