@@ -11,6 +11,8 @@
 
 A fast, static web app to browse and search all [ReVanced Patch Bundles](https://github.com/Jman-Github/ReVanced-Patch-Bundles) — zero backend, everything fetched live from GitHub.
 
+Also check out my custom patches: [![My Patches](https://img.shields.io/badge/My-Patches-black?style=for-the-badge&logo=github)](https://github.com/Paresh-Maheshwari/paresh-patches)
+
 **Live:** [paresh-maheshwari.github.io/patch-explorer](https://paresh-maheshwari.github.io/patch-explorer/)
 
 ## Features
