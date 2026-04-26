@@ -191,8 +191,16 @@ export async function loadTestBundle(input, el) {
   }
 }
 
-export function showAppModal(pkg, allData) {
-  const patches = allData.filter(d => d.pkg === pkg);
+export function showAppModal(pkg, allData, activeTypes) {
+  let patches = allData.filter(d => d.pkg === pkg);
+  // Filter by active type toggles
+  if (activeTypes && activeTypes.length) {
+    const typeSet = new Set(activeTypes);
+    patches = patches.filter(d => {
+      const t = bundleMeta[d.bundle]?.type;
+      return t ? typeSet.has(t) : typeSet.has('Legacy');
+    });
+  }
   const byB = {};
   patches.forEach(p => (byB[p.bundle] = byB[p.bundle] || []).push(p));
   let h = `<div class="modal">

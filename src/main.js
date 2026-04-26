@@ -77,7 +77,7 @@ document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', (
 // Delegate: app card click -> modal, bundle toggle, test bundle
 $('content').addEventListener('click', e => {
   const card = e.target.closest('.card[data-pkg]');
-  if (card) { showAppModal(card.dataset.pkg, allData); return; }
+  if (card) { showAppModal(card.dataset.pkg, allData, getActiveTypes()); return; }
   const toggle = e.target.closest('[data-toggle]');
   if (toggle) {
     let el = toggle.nextElementSibling;

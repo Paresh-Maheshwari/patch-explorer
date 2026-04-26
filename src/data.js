@@ -23,44 +23,70 @@ export async function discoverBundles() {
   return bundleNames;
 }
 
-// Fetch one bundle's patch list + bundle info
+// Fetch one bundle — both stable + dev channels, deduplicate patches
 async function fetchBundle(name) {
   const dir = `${name}-patch-bundles`;
-  const listUrl = `${RAW}/${dir}/${name}-latest-patches-list.json`;
-  const bundleUrl = `${RAW}/${dir}/${name}-latest-patches-bundle.json`;
+  const stableListUrl = `${RAW}/${dir}/${name}-stable-patches-list.json`;
+  const devListUrl = `${RAW}/${dir}/${name}-dev-patches-list.json`;
+  const stableBundleUrl = `${RAW}/${dir}/${name}-stable-patches-bundle.json`;
+  const devBundleUrl = `${RAW}/${dir}/${name}-dev-patches-bundle.json`;
   try {
-    const [lr, br] = await Promise.all([fetch(listUrl), fetch(bundleUrl)]);
-    if (!lr.ok) return [];
-    const list = await lr.json();
-    const bundle = br.ok ? await br.json() : {};
+    const [slr, dlr, sbr, dbr] = await Promise.all([
+      fetch(stableListUrl), fetch(devListUrl),
+      fetch(stableBundleUrl), fetch(devBundleUrl)
+    ]);
+    const stableList = slr.ok ? await slr.json() : null;
+    const devList = dlr.ok ? await dlr.json() : null;
+    const stableBundle = sbr.ok ? await sbr.json() : {};
+    const devBundle = dbr.ok ? await dbr.json() : {};
+
+    // Use dev bundle for metadata if available, else stable
+    const bundle = devBundle.download_url || devBundle.patches ? devBundle : stableBundle;
+    const primaryList = stableList || devList;
+    if (!primaryList) return [];
+
     if (bundleMeta[name]) {
-      bundleMeta[name].version = list.version;
-      bundleMeta[name].downloadUrl = bundle.download_url || null;
+      bundleMeta[name].stableVersion = stableList?.version || null;
+      bundleMeta[name].devVersion = devList?.version || null;
+      bundleMeta[name].version = stableList?.version || devList?.version;
+      const dl = bundle.download_url || bundle.patches?.url || null;
+      bundleMeta[name].downloadUrl = dl;
       bundleMeta[name].signatureUrl = bundle.signature_download_url || null;
       bundleMeta[name].createdAt = bundle.created_at || null;
       bundleMeta[name].changelog = bundle.description || null;
-      // Detect type from download URL extension
-      const dl = bundle.download_url || bundle.patches?.url || null;
-      bundleMeta[name].downloadUrl = dl;
       if (dl?.endsWith('.mpp')) bundleMeta[name].type = 'Morphe';
       else if (dl?.endsWith('.rvp')) bundleMeta[name].type = 'ReVanced';
       else if (dl?.endsWith('.jar')) bundleMeta[name].type = 'Legacy';
       else bundleMeta[name].type = null;
     }
-    return (list.patches || []).flatMap(p => {
-      const pkgs = p.compatiblePackages || {};
-      return Object.entries(pkgs).map(([pkg, vers]) => ({
-        bundle: name,
-        bVer: list.version,
-        name: p.name,
-        desc: p.description || '',
-        use: p.use !== false,
-        options: p.options || [],
-        deps: (p.dependencies || []).filter(d => !['BytecodePatch','ResourcePatch'].includes(d)),
-        pkg,
-        vers: Array.isArray(vers) ? vers.map(String) : null,
-      }));
-    });
+
+    // Merge patches from both channels, deduplicate by name+pkg
+    const seen = new Set();
+    const allPatches = [];
+    for (const [list, channel] of [[devList, 'dev'], [stableList, 'stable']]) {
+      if (!list) continue;
+      for (const p of list.patches || []) {
+        const pkgs = p.compatiblePackages || {};
+        for (const [pkg, vers] of Object.entries(pkgs)) {
+          const key = `${p.name}|${pkg}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          allPatches.push({
+            bundle: name,
+            bVer: list.version,
+            channel,
+            name: p.name,
+            desc: p.description || '',
+            use: p.use !== false,
+            options: p.options || [],
+            deps: (p.dependencies || []).filter(d => !['BytecodePatch','ResourcePatch'].includes(d)),
+            pkg,
+            vers: Array.isArray(vers) ? vers.map(String) : null,
+          });
+        }
+      }
+    }
+    return allPatches;
   } catch { return []; }
 }
 
