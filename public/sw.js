@@ -1,4 +1,4 @@
-const CACHE = 'patch-explorer-v1';
+const CACHE = 'patch-explorer-v2';
 const STATIC = ['/patch-explorer/'];
 
 self.addEventListener('install', e => {
